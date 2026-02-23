@@ -1,5 +1,9 @@
 import streamlit as st
 import pandas as pd
+st.set_page_config(page_title="Ecommerce Recommender", layout="wide")
+
+st.title("🛍️ Ecommerce Product Recommendation System")
+st.markdown("---")
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -48,16 +52,24 @@ def recommend(product_title, num_recommendations=5):
     return df[['PRODUCT_ID', 'TITLE']].iloc[product_indices]
 
 # UI
+st.subheader("🔥 Trending Products")
+
+st.dataframe(df[['TITLE','PRICE']].head(5))
 user_input = st.text_input("Enter Product Name")
 
 if st.button("Recommend"):
-    if user_input.strip() == "":
-        st.warning("Please enter a product name.")
-    else:
-        recommendations = recommend(user_input)
+    for i, score in recommendations:
+    col1, col2 = st.columns([1,3])
 
-        if recommendations is None:
-            st.error("❌ No matching product found.")
-        else:
-            st.success("Top Recommendations:")
-            st.dataframe(recommendations)
+    with col1:
+        st.image(df.loc[i, 'IMAGE_URL'], width=120)
+
+    with col2:
+        st.subheader(df.loc[i, 'TITLE'])
+        st.write("💰 Price: ₹", df.loc[i, 'PRICE'])
+        st.write("Similarity Score:", round(score, 3))
+
+        if st.button(f"Add to Cart {i}"):
+            st.success("Added to cart!")
+            
+
