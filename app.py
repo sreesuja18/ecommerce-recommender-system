@@ -16,8 +16,9 @@ st.markdown("---")
 # -----------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("small_train.csv")   # <-- Make sure your CSV name is correct
-    df = df.dropna(subset=['TITLE'])
+    df = pd.read_csv("small_train.csv")  # <-- PUT YOUR EXACT CSV NAME
+    df = df.fillna("")
+    df["combined_features"] = df["TITLE"] + " " + df["BULLET_POINTS"] + " " + df["DESCRIPTION"]
     return df
 
 df = load_data()
@@ -26,26 +27,23 @@ df = load_data()
 # TRENDING SECTION
 # -----------------------------
 st.subheader("🔥 Trending Products")
-
-if "PRICE" in df.columns:
-    st.dataframe(df[['TITLE', 'PRICE']].head(5))
-else:
-    st.dataframe(df[['TITLE']].head(5))
-
+st.dataframe(df[['TITLE']].head(5))
 st.markdown("---")
 
 # -----------------------------
-# RECOMMENDATION LOGIC
+# VECTORIZE
 # -----------------------------
 vectorizer = TfidfVectorizer(stop_words='english')
-tfidf_matrix = vectorizer.fit_transform(df['TITLE'])
-
+tfidf_matrix = vectorizer.fit_transform(df["combined_features"])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
+# -----------------------------
+# RECOMMEND FUNCTION
+# -----------------------------
 def get_recommendations(product_name, top_n=5):
     product_name = product_name.lower()
 
-    matches = df[df['TITLE'].str.lower().str.contains(product_name)]
+    matches = df[df["TITLE"].str.lower().str.contains(product_name)]
 
     if matches.empty:
         return None
@@ -55,9 +53,7 @@ def get_recommendations(product_name, top_n=5):
     similarity_scores = list(enumerate(cosine_sim[idx]))
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
 
-    top_products = similarity_scores[1:top_n+1]
-
-    return top_products
+    return similarity_scores[1:top_n+1]
 
 # -----------------------------
 # USER INPUT
@@ -80,22 +76,10 @@ if st.button("Recommend"):
 
             for i, score in recommendations:
 
-                col1, col2 = st.columns([1, 3])
+                st.markdown("### " + df.loc[i, "TITLE"])
+                st.write("Similarity Score:", round(score, 3))
 
-                with col1:
-                    if "IMAGE_URL" in df.columns:
-                        st.image(df.loc[i, 'IMAGE_URL'], width=120)
-                    else:
-                        st.write("🖼️ No Image")
+                with st.expander("View Description"):
+                    st.write(df.loc[i, "DESCRIPTION"])
 
-                with col2:
-                    st.subheader(df.loc[i, 'TITLE'])
-
-                    if "PRICE" in df.columns:
-                        st.write("💰 Price: ₹", df.loc[i, 'PRICE'])
-
-                    st.write("Similarity Score:", round(score, 3))
-
-                    if st.button(f"Add to Cart {i}"):
-                        st.success("Added to cart!")
-
+                st.markdown("---")
