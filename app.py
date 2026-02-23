@@ -16,7 +16,7 @@ st.markdown("---")
 # -----------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data.csv")   # <-- Make sure your CSV name is correct
+    df = pd.read_csv("small_train.csv")   # <-- Make sure your CSV name is correct
     df = df.dropna(subset=['TITLE'])
     return df
 
@@ -98,3 +98,4 @@ if st.button("Recommend"):
 
                     if st.button(f"Add to Cart {i}"):
                         st.success("Added to cart!")
+
